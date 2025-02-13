@@ -14,7 +14,7 @@ from astropy.table import Table
 from astropy.table import Table
 
 #Import stuc.fits file
-objs = Table.read("/d/scratch/ASTR1560/week2/struc.fits")
+objs = Table.read("/d/scratch/ASTR5160/week2/struc.fits")
 
 def plotradec(RA,DEC):
     """
@@ -23,10 +23,16 @@ def plotradec(RA,DEC):
     """
     plt.plot(RA,DEC, "bx")
     
+    
+"""
 #Overplot just he RA and DEC of the objects with ext > 0.22
 for i in range(len(objs["RA"])):
     if float(objs["EXTINCTION"][:,0]) > 0.22:
         plotradec(objs["RA"],objs["DEC"])
+"""
 
+#Post submission correction, for future coding via Adam:
+ii = objs["EXTINCTION"][:,0] > 0.22
+plotradec(objs["RA"][ii],objs["DEC"][ii])
 
 

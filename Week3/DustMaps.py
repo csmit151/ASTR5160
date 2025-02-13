@@ -31,13 +31,16 @@ dustdir = "/d/scratch/ASTR5160/data/dust/v0_1/maps"
 config["data_dir"] = dustdir
 sfd = SFDQuery()
 
-print("sfd(c):",sfd(c))    #0.016697595
+print("This is sfd(c):",sfd(c))    #0.016697595
 
 #Now we can obtain the reddening without first converting to Galactic coordinates
 
 ebv = sfd(c)
 ugriz = np.array([4.239 ,3.303 , 2.285 , 1.698 , 1.263])
 A = ebv*ugriz
+
+
+print("I am running")
 
 #with:
 ra1, dec1 = "246.933", "40.795" #and 
@@ -63,6 +66,7 @@ z2 = 18.63
 #Now plot g-r and r-i
 plt.scatter(g1-r1,r1-i1, marker="*", color='r', s = 80)
 plt.scatter(g2-r2,r2-i2, marker="*", color='b', s = 80)
+plt.show()
 
 """
 These quasars don't have the same color,
@@ -72,7 +76,7 @@ The diffrence is dust reddening
 Correcting the Quasar's color for dust extinction and replotting:
 """
 
-
+"""
 c1 = SkyCoord(ra1,dec1).galactic
 ebv1 = sfd(c1)
 ugriz1 = np.array([u1, g1, r1, i1, z1])
@@ -98,8 +102,11 @@ Q2 = mpatches.Patch(facecolor='blue', label='Q2', linewidth = 0.5, edgecolor = '
 Q1c = mpatches.Patch(facecolor='darkred', label='Q1 Dust Cor.', linewidth = 0.5, edgecolor = 'black')
 Q2c = mpatches.Patch(facecolor='darkblue', label='Q2 Dust Cor.', linewidth = 0.5, edgecolor = 'black')
 legend = plt.legend(handles=[Q1,Q2,Q1c,Q2c], loc = 0, bbox_to_anchor = (1,1), fontsize = 12, fancybox = False, edgecolor = "none", facecolor = "none") #loc code 9 is upper center, 2 upper left
+plt.show()
+"""
 
 
+"""
 
 #Visualize the dust in the region of each quasar
 
@@ -138,3 +145,4 @@ for i in range(len(meshrangedec2)):
 mg2 = np.meshgrid(ragrid2,decgrid2)
 
 
+"""
