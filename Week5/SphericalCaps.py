@@ -53,12 +53,10 @@ if __name__ == "__main__":
         c.representation_type = "cartesian"
         c2 = SkyCoord('00h00m00s','90d00m00s', frame = 'icrs')
         c2.representation_type = "cartesian"
-        #CS Astropy out puts e-17 instead of zero for x? Just added
-        #a rounding function to a reasonable precision (15 decimals)
-        x = np.round(c2.x,15)
-        y = np.round(c2.y,15)
-        z = np.round(c2.z,15)
-        print("4-Vector representation is:", x,y,z,(1-math.sin(decc*math.pi/180)))
+        x = c2.x
+        y = c2.y
+        z = c2.z
+        print("4-Vector representation for DEC:",dec," is:", f"{x:4.2f}",f"{y:4.2f}",f"{z:4.2f}",(1-math.sin(decc*math.pi/180)))
         
 v4capd("36d00m00s")
 #4-Vector representation is: 0.0 0.0 1.0 0.41221474770752686
