@@ -75,8 +75,8 @@ minter=pymangle.Mangle("intersection.ply")
 mboth = pymangle.Mangle("bothcaps.ply","w")
 
 #CS use genrand to fill each mask with 10,000 rand points
-ra_rand_in, dec_rand_in = minter.genrand(1000)
-ra_rand_b, dec_rand_b = mboth.genrand(1000)
+ra_rand_in, dec_rand_in = minter.genrand(10000)
+ra_rand_b, dec_rand_b = mboth.genrand(10000)
 
 #CS Now plot the random points corresponding to each mask
 #plt.scatter(ra_rand_in,dec_rand_in,color="red", s=10)
@@ -95,7 +95,7 @@ mf.write("  "+str(x2)+" "+str(y2)+" "+str(z2)+" "+str(h2))
 mf.close()
 
 mflip1 = pymangle.Mangle("intersectionflip.ply")
-ra_rand_inf, dec_rand_inf = mflip1.genrand(1000)
+ra_rand_inf, dec_rand_inf = mflip1.genrand(10000)
 
 #CS plot minter and mflip1 on one plot in diffrent colors
 plt.scatter(ra_rand_in,dec_rand_in,color="red", s=10)
