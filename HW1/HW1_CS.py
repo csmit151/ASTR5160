@@ -4,6 +4,8 @@
 ASTR 5160
 
 Chase L. Smith
+
+HW 1
 """
 
 #CS Import relevant packages
@@ -17,6 +19,7 @@ from astropy import units as u
 import math
 from astropy.coordinates import EarthLocation
 from astropy.io import ascii
+import re
 from tqdm import tqdm
 
 
@@ -30,8 +33,11 @@ deq = []
 rat = []
 dect = []
 times = []
-timecor = [] #Only times that are positive airmass
+timecor = [] #CS Only times that are positive airmass
 airmass = []
+radecout = []
+raout = []
+decout = []
 
 #CS File location
 fl = "/d/scratch/ASTR5160/week4/HW1quasarfile.txt"
@@ -50,7 +56,7 @@ if __name__ == "__main__":
             ra = str(o[0:2])+"h"+str(o[2:4])+"m"+str(o[4:9])+"s"
             #CS Put these into an array to use later
             raq.append(ra)
-        print("RA extracted from", fl)
+        #print("RA extracted from", fl)
         return raq
 
 if __name__ == "__main__":
@@ -66,7 +72,7 @@ if __name__ == "__main__":
             dec = str(o[9:12])+"d"+str(o[12:14])+"m"+str(o[14:18])+"s"
             #CS Put these into an array to use later
             deq.append(dec)
-        print("DEC extracted from", fl)
+        #print("DEC extracted from", fl)
         return deq
 
 
@@ -98,7 +104,6 @@ if __name__ == "__main__":
         print("The current year is:",cyd[0:4])
     
         days = 0
-        print("Days before loop:",days)
         #CS get nubmer of days and
         #check if this month as 31 or 30 days,or is Feb
         mn = int(mni)
@@ -114,13 +119,13 @@ if __name__ == "__main__":
             #the current year must be a leap year
             if int(cyd[0:4])%4 != 0:
                 if mn == 2:
-                    days = 2
-                    print("This many days:",days)
+                    days = 28
             else:
+                #Otherwise use the normal num of days for feb
                 if mn == 2:
                     days = 29
                     print("This year is a leap year")
-            print("Number of days in",mn,"is:",days,"days")
+            print("Number of days in input month,",mn,", is:",days,"days")
         return days
 
 if __name__ == "__main__": 
@@ -169,53 +174,64 @@ if __name__ == "__main__":
         coords = SkyCoord(ra,dec,frame = 'icrs')
         KPNO = EarthLocation.of_site("kpno")
         
-        #CS Convert the input skycoords to AltAz, where Coords is array like
-        for i in tqdm(range(len(time))):
+        #CS For each time convert the input skycoords to AltAz, where Coords is array like
+        for i in range(len(time)):
             #CS Alt and Az of an object at KP at each time
             aa = AltAz(location=KPNO,obstime=Time(time[i]))
             caa = coords.transform_to(aa)
             #CS Find the maximum altiude object (minimum airmass)
             #CS Note that am will be negative for z > 90
             alts = str(caa.alt)
-            #CS Convert the altiude to a string, and check to see
-            #if that z value is less than 90
-            for j in range(2,len(alts),20):
-                print("j:",j)
-                print("J+1:",j+2)
-                print("alts[(j):(j+2)]:",alts[(j):(j+2)])
-                print("alts[(j-3):(j+5)]:",alts[(j-3):(j+5)])
+            maltns = max(caa.alt)
+            malt = str(maltns)
+            #CS Convert to degrees
+            maltd = float(malt[0:2])+float(malt[3:5])/60+float(malt[6:8])/60
+            #Calculate Airmass
+            AM = (1/math.cos(float(maltd)*180/(3.14)))
+            #CS we only want airmass greater than zero
+            if AM > 0:
+                airmass.append(AM)
+                #CS Record the time and this objects coordinates
+                timecor.append(time[i])
+                for j in range(len(caa)):
+                    if str(caa.alt[j]) == malt:
+                        radecout.append(str(coords[j].ra)+", "+str(coords[j].dec))
+                        raout.append(str(coords[j].ra.degree))
+                        decout.append(str(coords[j].dec.degree))
+            
+            if AM <= 0:
+                #CS Remove negative airmasses
+                #CS Only running this when AM < 0 saves us from needlessly
+                #calculating airmasses for every singel object, everysingle day
+                AMall = [] #CS An AM list w/o negatives removed
+                AMsort = [] #CS A list for sorting non negative AM
+                #CS Calculate all airmasses
+                
+                for j in range(len(caa)):
+                    #CS Convert to degree and calculate Airmass
+                    alts2 = str(caa[j].alt.degree)
+                    AMall.append(1/math.cos(float(alts2)*180/(3.14)))
+                #CS Find positive AMs only
+                for l in range(len(AMall)):
+                    if AMall[l] > 0:
+                        AMsort.append(AMall[l])
+                #CS find minimum, while keeping track of index
+                Amin = 10 #CS A very high airmass to start sorting with
+                intAmin = 0 #CS the ith AM value that is minimized, so we can get ra and dec later
+                for k in range(len(AMsort)):
+                    if AMsort[k] <= Amin:
+                        Amin == AMsort[k]
+                        intAmin == k
+                #CS Write our found min airmass and its corresponding coords
+                airmass.append(Amin)
+                timecor.append(time[i])
+                for j in range(len(caa)):
+                    if str(caa.alt[j]) == str(caa.alt[intAmin]):
+                        radecout.append(str(coords[j].ra)+", "+str(coords[j].dec))
+                        raout.append(str(coords[j].ra.degree))
+                        decout.append(str(coords[j].dec.degree))
 
-                if alts[(j):(j+2)] != "..":
-                    if alts[(j+1):(j+2)] == "s" or alts[(j+1):(j+2)] == "d":
-                    #CS Skip bad coords?
-                        if float(alts[(j+4):(j+5)]) < 90:
-                            maltns = max(caa.alt)
-                            malt = str(maltns)
-                            #print("max alt:",malt)
-                            #CS Convert to degrees
-                            maltd = float(malt[0:2])+float(malt[3:5])/60+float(malt[6:8])/60
-                            #Calculate Airmass
-                            AM = (1/math.cos(float(maltd)*180/(3.14)))
-                            airmass.append(AM)
-                            #CS Remove this time so it dosen't get counted needlessly
-                            timecor.append(time[i])
-                    elif float(alts[(j):(j+2)]) != "s":
-                        if float(alts[(j):(j+2)]) != "s]":
-                            if float(alts[(j):(j+2)]) < 90:
-                                maltns = max(caa.alt)
-                                malt = str(maltns)
-                                #print("max alt:",malt)
-                                #CS Convert to degrees
-                                maltd = float(malt[0:2])+float(malt[3:5])/60+float(malt[6:8])/60
-                                #Calculate Airmass
-                                AM = (1/math.cos(float(maltd)*180/(3.14)))
-                                airmass.append(AM)
-                                #CS Remove this time so it dosen't get counted needlessly
-                                timecor.append(time[i])
-                            
-                            #for k in range(len(caa.alt)):
-                            #    if maltns == caa.alt[k]:
-                            #        print("caa corresponding to max:",caa)
+            
         
 if __name__ == "__main__": 
     def WTab():
@@ -225,17 +241,20 @@ if __name__ == "__main__":
         """
         data = Table()
         data["Date"] = timecor
-        #data["Quasar Coordinates (hms.ss dms)"] = SkyCoord(raq,deq,frame='icrs')
-        #data["RA (deg)"] = raq
-        #data["Dec (deg)"] = deq
+        data["Quasar Coordinates (hms.ss dms)"] = radecout
+        data["RA (deg)"] = raout
+        data["Dec (deg)"] = decout
         data["Airmass"] = airmass
         ascii.write(data, 'Q_Out_Table.dat', overwrite=True)
     
-if __name__ == "__main__": 
-    #Rfile(fl)
+if __name__ == "__main__":
+    #CS Take an input month from the comand line
     month = input("Input a desired month (1-12):")
-    #getTimes(month)
+    #CS Run calculate airmass script
+    print("Running...")
     calAmass(RfileR(fl),RfileD(fl),getTimes(month))
+    print("Writing...")
+    #CS Write to data file
     WTab()
     
     
