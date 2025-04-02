@@ -76,10 +76,29 @@ Coord matched qs sweep files:
  [180. 190.  30.  35.]]
 """    
 
+sweep1 = "/d/scratch/ASTR5160/data/legacysurvey/dr9/south/sweep/9.0/sweep-170p025-180p030.fits"
+
+with fits.open(sweep) as hdul:
+    data = hdul[1].data
+    mask = (data["RA"] > 248.8582) & (data["RA"] < 248.8583) & (data["DEC"] > 9.79) & (data["DEC"] < 9.80)
+    PGA = data[mask]
+    #print(data.dtype.names)
+    print("RA:",PGA["RA"])
+    print("DEC:",PGA["DEC"])
+    print("PAR:",PGA["PARALLAX"])
+    print("FG:",PGA["FLUX_G"])
+    print("FR:",PGA["FLUX_R"])
+    print("FZ:",PGA["FLUX_Z"])
+    print("W1:",PGA["FLUX_W1"])
+    print("W2:",PGA["FLUX_W2"])
+    print("W3:",PGA["FLUX_W3"])
+    print("W4:",PGA["FLUX_W4"])
 
 
 if __name__ == "__main__":
-    print("Coord matched star sweep files:")
-    whichSweepSouth(stars)
-    print("Coord matched qs sweep files:")
-    whichSweepSouth(qs)
+    #print("Coord matched star sweep files:")
+    #whichSweepSouth(stars)
+    #print("Coord matched qs sweep files:")
+    #whichSweepSouth(qs)
+    
+    

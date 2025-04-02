@@ -69,8 +69,14 @@ def PonSphA(N):
     ax.set_xticklabels(xlab, weight=800)
     ax.grid(color='b',linestyle='dashed',linewidth=2)
     #Show Fig
-    fig.show()
-
+    #fig.show()
+    #Return an array of ra and dec points
+    coordsra = []
+    coordsdec = []
+    for i in range(len(ra)):
+        coordsra.append(ra[i])
+        coordsdec.append(dec[i])
+    return coordsra, coordsdec
 
 #PonSphA(N)
 
