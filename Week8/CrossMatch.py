@@ -165,8 +165,9 @@ def whichSweep(objects):
         if sweeps[i] == True:
             sweepscor.append(sweeps[i])
             swradecscor.append(swradecs[i])
-    print("I recover:",len(np.unique(swradecscor, axis=0)),"sweep files")
-    
+    #print("I recover:",len(np.unique(swradecscor, axis=0)),"sweep files")
+    #print(swradecscor)
+    return swradecscor
     
 if __name__ == "__main__":
     whichSweep(objsVLA[:100])

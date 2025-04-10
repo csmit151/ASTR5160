@@ -16,7 +16,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from tqdm import tqdm
-
+import os
 
 stars = Table.read("/d/scratch/ASTR5160/week10/stars-ra180-dec30-rad3.fits")
 qs = Table.read("/d/scratch/ASTR5160/week10/qsos-ra180-dec30-rad3.fits")
