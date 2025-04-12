@@ -103,9 +103,10 @@ mock_target_class = knn.predict(mock_data)
 # CS Approximately what precentage of thses 100,000 irises
 # CS are classifed as virgincia by the k-NN algorithim?
 
-ii = (mock_target_class == 1)
-#print("% virginica:")
-#print(float(len(mock_data[ii])/len(mock_data))*100,"%")
+ii = (mock_target_class == 1) # CS Get which ones are virginica
+print("% virginica:")
+print(float(len(mock_data[ii])/len(mock_data))*100,"%") # CS precentage calculation
+precent_vir = str(float(len(mock_data[ii])/len(mock_data))*100) +"%"
 
 """
 CS Results
@@ -114,7 +115,7 @@ CS Results
 21.869 %
 """
 
-"""
+
 
 # CS Copy from last class
 # CS Find the closest object in the sweep files to 
@@ -127,7 +128,7 @@ objs.add_row((ra,dec))
 fns = glob("/d/scratch/ASTR5160/data/legacysurvey/dr9/south/sweep/9.0/*fits")
 
 qs_to_match = Table.read("/d/scratch/ASTR5160/week10/qsos-ra180-dec30-rad3.fits")
-"""
+
 
 """
 # CS Loop through all of the sweep files and use is_in_box to
@@ -159,7 +160,7 @@ CS Our sweep file is:
 # CS Loop through all of the sweep files and use is_in_box to
 # CS  get the one is in our box
 
-"""
+
 boxobj = Table(names=("RA", "DEC")) # Make a box that encloses 3 deg in all directions
 boxobj.add_row((183,33))
 boxobj.add_row((177,33))
@@ -252,35 +253,9 @@ c2 = SkyCoord(pra2,pdec2,frame='icrs')
 
 id1, id2, d2, d3 = c2.search_around_sky(c1, (1/3600)*u.deg) # CS 1" mr
 
-"""
-
-
-"""
 # CS id1 is 275 r<20 quasars
 
-# CS write a function that uses the k-NN algorithm to
-# CS classify quasars based on g-z and r-W1 colors
 
-print("Now writing table")
-
-
-with open("id1.txt", "w") as file:
-    for i in range(len(id1)):
-        file.write(str(id1[i]))
-        file.write("\n")
-
-with open("id2.txt", "w") as file:
-    for i in range(len(id2)):
-        file.write(str(id2[i]))
-        file.write("\n")
-
-print("Table written")
-
-"""
-
-
-
-"""
 # CS Objects we know are qusars
 
 match_psf = psfobjs[id1]  
@@ -308,7 +283,7 @@ with open("fluxG.txt", "w") as file:
         file.write(str(match_psf["FLUX_G"][i]))
         file.write("\n")
 
-"""
+
 
 #print(len(pdata["RA"]))
 
@@ -341,7 +316,7 @@ for i in range(len(fr)):
 
 
 
-"""
+
 # CS Use a random subsample of psfobjs as "stars"
 rss = []
 
@@ -363,7 +338,7 @@ with open("rand_fluxW1.txt", "w") as file:
         file.write(str(rand_psf["FLUX_W1"][i]))
         file.write("\n")
 
-with open("randfluxZ.txt", "w") as file:
+with open("rand_fluxZ.txt", "w") as file:
     for i in range(len(rand_psf["FLUX_Z"])):
         file.write(str(rand_psf["FLUX_Z"][i]))
         file.write("\n")
@@ -373,7 +348,7 @@ with open("rand_fluxG.txt", "w") as file:
         file.write(str(rand_psf["FLUX_G"][i]))
         file.write("\n")
 
-"""
+
 
 #print(len(pdata["RA"]))
 
@@ -392,7 +367,7 @@ rand_fg1 = rand_fluxg.read()
 rand_fg = rand_fg1.splitlines()
 rand_fluxg.close()
 
-rand_fluxz = open('randfluxZ.txt') # CS read in id1
+rand_fluxz = open('rand_fluxZ.txt') # CS read in id1
 rand_fz1 = rand_fluxz.read()
 rand_fz = rand_fz1.splitlines()
 rand_fluxz.close()
@@ -500,6 +475,18 @@ tnames = np.array(["star","QSO"]) # CS make sure matches our order
 
 
 def knn_qso(aflux):
+    """ Takes an array of in put fluxes and employs
+    k-NN classification to classify quasars based on
+    g -z and r -W1 colors.
+    
+    Parameters
+    ----------
+    aflux: :class: 'array'
+        An array of flux values
+    Returns
+    -------
+    List of k-NN classifications
+    """
     knn = neighbors.KNeighborsClassifier(n_neighbors=1)
     knn.fit(aflux, aflux_class)
     for i in range(len(g_z)):
@@ -507,13 +494,17 @@ def knn_qso(aflux):
         print(thisarray)
         predicted_class = knn.predict([thisarray]) # CS QSO like
         print(predicted_class, tnames[predicted_class])
+        thisarray1 = [r_w1[i],rand_r_w1[i]]
+        print(thisarray1)
+        predicted_class = knn.predict([thisarray1]) # CS QSO like
+        print(predicted_class, tnames[predicted_class])
 
 
 
 if __name__ == "__main__":
     knn_qso(allfluxes)
     print("% virginica:")
-    print(float(len(mock_data[ii])/len(mock_data))*100,"%")
+    print(precent_vir)
     
     
     
