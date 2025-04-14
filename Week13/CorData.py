@@ -55,9 +55,11 @@ max_cor_ind = np.argmax(co_var_nd)
 min_cor_ind = np.argmin(co_var_nd)
 
 
-print("Maximum covar:",np.max(co_var_nd))
+print("Maximum covar:",np.max(co_var))
+print("Maximum covar ignoring diagonal:",np.max(co_var_nd))
 print("Data columns that are most correlated are:", col_row[max_cor_ind])
 print("Minimum covar (most anti-correlated):",np.min(co_var_nd))
+print("Minimum covar ignoring diagonal:",np.min(co_var))
 
 
 
