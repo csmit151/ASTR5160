@@ -132,6 +132,32 @@ id1, id2, d2, d3 = c2.search_around_sky(c1, (1/3600)*u.deg) # CS 1" matching rad
 
 first_crossmatch = np.unique(magcut[id1]) # CS Make sure and remove duplicates
 
+# CS Check for very close but not exact matches
+fra = first_crossmatch["RA"]
+fdec = first_crossmatch["DEC"]
+"""
+print("RA:",np.sort(fra))
+print("DEC:",np.sort(fdec))
+print("RA:",np.argsort(fra))
+print("DEC:",np.argsort(fdec))
+"""
+# CS Can easily see that DEC 48.9438 and 48.944 is the same object
+sd = np.argsort(fdec)
+#print(fdec[sd[19]])
+sfdec = np.argsort(fdec)
+
+# CS Remove the bad object
+first_crossmatch = np.delete(first_crossmatch, sfdec[19])
+
+"""
+# CS Double check we removed the right one:
+fra = first_crossmatch["RA"]
+fdec = first_crossmatch["DEC"]
+print("RA:",np.sort(fra))
+print("DEC:",np.sort(fdec))
+print("RA:",np.argsort(fra))
+print("DEC:",np.argsort(fdec))
+"""
 
 def is_letter(test, list_in):
     """Takes an input and determines
@@ -205,7 +231,7 @@ with ThreadPoolExecutor(max_workers=8) as executor:
 
 
 # CS Get ubrite1 and append
-ii = np.argmin(np.unique(u_sdss_crossmatch)) # CS u-band brightest (smallest mag), checking for duplicate sources
+ii = np.argmin(u_sdss_crossmatch) # CS u-band brightest (smallest mag), checking for duplicate sources
 ubrite1_u = u_sdss_crossmatch[ii] # CS Get rest of ubrite1 params
 ubrite1_i = i_sdss_crossmatch[ii]
 ubrite1_ra = ra_sdss_crossmatch[ii]
@@ -273,7 +299,7 @@ def lam_v_flux(lam,flux):
     plt.xlim(3000,25000)
     plt.xlabel("Band Wavelength (Angstroms)")
     plt.ylabel("Nanomaggies (3631 * $10^9$) Jy")
-    #plt.show()
+    plt.show()
 
 
 def print_results():
@@ -294,7 +320,13 @@ def print_results():
     print("% of #3:")
     print(float(len(u_sdss_crossmatch)/len(first_crossmatch["RA"]))*100,"%")
     lam_v_flux(wavelengths,fluxes)
-
+    print("redshift of ubrite1:")
+    print("1.138")
+    print("Comments:")
+    print("ubrite1 is a quasar, which makes sense")
+    print("as we pre select for something that is bright in UV and blue in W1-W2")
+    print("The redshift pushes the high energy peak of the spectra")
+    print("More into the NUV.")
 
 if __name__ == "__main__":
     print_results()
@@ -311,11 +343,18 @@ ubrite1_ra:
 ubrite1_dec:
 50.465377060102
 #3: Number of cross matched r<22 W1-W2 > 0.5 sources:
-42
+40
 #5 Total number of sources with a match in SDSS:
-38
+36
 % of #3:
-90.47619047619048 %
+90.0 %
+redshift of ubrite1:
+1.138
+Comments:
+ubrite1 is a quasar, which makes sense
+as we pre select for something that is bright in UV and blue in W1-W2
+The redshift pushes the high energy peak of the spectra
+More into the NUV.
 
 
 """
