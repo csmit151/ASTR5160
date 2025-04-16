@@ -356,6 +356,6 @@ as we pre select for something that is bright in UV and blue in W1-W2
 The redshift pushes the high energy peak of the spectra
 More into the NUV.
 
-
+CS Usually runs in like 40s but sometimes takes like 3min?
 """
     
