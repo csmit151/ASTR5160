@@ -6,6 +6,7 @@ HW3
 @author: csmit151
 """
 
+# CS Import relevant packages
 import numpy as np
 import matplotlib.pyplot as plt
 from astropy.table import Table, vstack
@@ -13,34 +14,51 @@ import os
 from tqdm import tqdm
 from Week8.CrossMatch import decode_sweep_name
 from Week8 import sdssDR9query
+from Week8.CrossMatch import is_in_box
 import argparse
 from glob import glob
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import warnings
 
+
+# CS Ignore warnings
+warnings.filterwarnings('ignore')
 
 
 # CS Use argparse to make an informative help message
 parser = argparse.ArgumentParser()
 parser.add_argument("Description:", help = "This function examines the u-band properties of Legacy Surveys point sources that have infared excess and are detected in the radio by the FIRST survey and are around (ra,dec) = (163,50)")
 
-# CS Read in the FIRST sources
-first_to_match = Table.read("/d/scratch/ASTR5160/data/first/first_08jul16.fits")
+# CS Read in FIRST radio data
+Fdata = Table.read("/d/scratch/ASTR5160/data/first/first_08jul16.fits")
+
 
 # CS Assemble a list of all the possible names of the sweep files with glob
 fns = glob("/d/scratch/ASTR5160/data/legacysurvey/dr9/north/sweep/9.0/*fits")
 
-# CS A circular region centered at ra 163, and dec 50
-ra = 163.
-dec = 50.
+
+boxobj = Table(names=("RA", "DEC")) # Make a box that encloses 3 deg in all directions
+boxobj.add_row((166,53))
+boxobj.add_row((166,47))
+boxobj.add_row((160,47))
+boxobj.add_row((160,53))
 
 # CS Determine which FIRST sources lie in the astronomers survey
+# CS A circular region centered at ra 163, and dec 50:
+ra = 163.
+dec = 50.
 c_center = SkyCoord(ra*u.degree,dec*u.degree)
 
-# CS Read in FIRST radio data
-Fdata = Table.read("/d/scratch/ASTR5160/data/first/first_08jul16.fits")
+# CS Use seperation to get F_coords within 3 deg of 163, 50
+fra = np.array(Fdata["RA"])*u.degree
+fdec = np.array(Fdata["DEC"])*u.degree
+F_coords = SkyCoord(fra,fdec,frame='icrs')
+ii = (c_center.separation(F_coords) < 3*u.degree)
+sweep_close = Fdata[ii]
+
 
 # CS Loop through all of the sweep files and use seperation
 # CS to get the one that contains our object
@@ -48,48 +66,63 @@ sweeplist = [] # CS Global sweep list variable
 
 for i in range(len(fns)):
     ramin, ramax, decmin, decmax = decode_sweep_name(fns[i])
-    # CS Convert the center point of the sweep file we're testing
-    # CS to a SkyCoord for .separation
-    sweep_skycoord = SkyCoord(((ramin+ramax)/2)*u.degree,((decmin+decmax)/2)*u.degree,frame='icrs')
-    if c_center.separation(sweep_skycoord) < 3*u.degree:
-        sweeplist.append(fns[i]) # CS Only append if we found one inside of 3 deg
+    radecbox = [ramin, ramax, decmin, decmax]
+    ii = is_in_box(sweep_close,radecbox) # CS Find the sweep files we need to get all of points in the sweeps that are within 3deg of the location
+    if np.any(ii):
+        #print(fns[i])
+        sweeplist.append(str(fns[i]))
+
 
 # CS Get every source with r mag < 22 and W1-W2 > 0.5
 # CS and is 3 deg of the
 
 rl22 = float(10**(-(22-22.5)/2.5)) # CS Corresponds to flux =  r band mag of 22
 
-w1_w2_p05 = float(10**(-(0.5-22.5)/2.5)) # CS Corresponds to flux = W1_W2 of 0.5
-
 
 # CS Make a Skycoord object that is at the center of 
 # CS our circular region, and make it have as many
 # CS coords as we have sweeplists
 
-c1 = SkyCoord([ra]*len(sweeplist)*u.degree,[dec]*len(sweeplist)*u.degree,frame='icrs')
-
 sweep_out = [] # CS Global output variable
 
 # CS Run through each sweep, and apply mag cut
-for i, sweep_path in enumerate(tqdm(sweeplist)):
-    sweep = Table.read(sweep_path) # CS Read in the sweep
+for i in range(len(sweeplist)):
+    sweep = Table.read(sweeplist[i], memmap = True) # CS Read in the sweep with memmap=True for speed
+    
+    # CS Filter bad fluxes
+    good_flux = (sweep["FLUX_R"] > 0) & (sweep["FLUX_W1"] > 0) & (sweep["FLUX_W2"] > 0)
+    
+    # CS Get fluxes
+    flux_R = sweep["FLUX_R"]
+    flux_w1 = sweep["FLUX_W1"]
+    flux_w2 = sweep["FLUX_W2"]
+    
+    # CS Conver flux to mags (recalling nanomaggies conversions)
+    w1_mag = 22.5 - 2.5 * np.log10(sweep["FLUX_W1"]) # CS Corresponds to flux = W1
+    w2_mag = 22.5 - 2.5 * np.log10(sweep["FLUX_W2"]) # CS Corresponds to flux = W2
+    mag_mask = (sweep["FLUX_R"] > rl22) & ((w1_mag-w2_mag) > 0.5)
+    
+    sweep = sweep[mag_mask]
+    # CS Now make sweep skycoord
     ra_sweep = np.array(sweep["RA"])*u.degree
     dec_sweep = np.array(sweep["DEC"])*u.degree
     c2 = SkyCoord(ra_sweep,dec_sweep, frame='icrs')
     
-    sep = c1[i].separation(c2) # CS Use astropy.coordinates seperation from Class 8
     # CS Make a mask that corresponds to a flux BRIGHTER than r = 22 and a W1_W2 flux DIMMER than 0.5
-    mask_mag = ((sweep["FLUX_R"] > rl22) & ((sweep["FLUX_W1"] - sweep["FLUX_W2"]) < w1_w2_p05) & (sep < 3*u.degree))
-    sweep_out.append(sweep[mask_mag])
+    mask_sep = (c_center.separation(c2) < 3*u.degree)
+    sweep_out.append(sweep[mask_sep])
+
 
 # CS Coordinate match FIRST sources and Lecagy Sweep
 magcut = vstack(sweep_out)
 
 
 # CS Employ SkyCoord and search_around_sky at a 1" matching radius
-qra1 = np.array(first_to_match["RA"])*u.degree
-qdec1 = np.array(first_to_match["DEC"])*u.degree
-c1 = SkyCoord(qra1,qdec1)
+swclra = np.array(sweep_close["RA"])*u.degree
+swcldec = np.array(sweep_close["DEC"])*u.degree
+
+c1 = SkyCoord(swclra,swcldec, frame='icrs')
+
 
 pra2 = np.array(magcut["RA"])*u.degree
 pdec2 = np.array(magcut["DEC"])*u.degree
@@ -97,8 +130,8 @@ c2 = SkyCoord(pra2,pdec2,frame='icrs')
 
 id1, id2, d2, d3 = c2.search_around_sky(c1, (1/3600)*u.deg) # CS 1" matching radius
 
-# CS Get sources
-first_crossmatch = magcut[id1]
+first_crossmatch = np.unique(magcut[id1]) # CS Make sure and remove duplicates
+
 
 def is_letter(test, list_in):
     """Takes an input and determines
@@ -140,13 +173,10 @@ def run_sdss_query(ra, dec):
     -------
     Resulting split output from sdssDR9query
     """
-    result = subprocess.check_output(
-        ["python", "sdssDR9query.py", str(ra), str(dec)],
-        text=True,
-        stderr=subprocess.STDOUT
-    )
+    # CS Usse subprocess to return output of python sdssDR9query ra dec
+    result = subprocess.check_output(["python", "sdssDR9query.py", str(ra), str(dec)],text=True,stderr=subprocess.STDOUT)
 
-    # CS Split fluxes by comma
+    # CS Split output fluxes by comma
     split_result = result.strip().split(",")
     return split_result
    
@@ -157,23 +187,26 @@ i_sdss_crossmatch = []
 ra_sdss_crossmatch = []
 dec_sdss_crossmatch = []
 
+# CS List of coords
 coords = list(zip(first_crossmatch["RA"],first_crossmatch["DEC"]))
 
 # CS Use ThreadPoolExecutor to speed up querying
 with ThreadPoolExecutor(max_workers=8) as executor:
+    # CS Executor.submit schedules a run_sdss_query
     futures = [executor.submit(run_sdss_query, ra, dec) for ra, dec in coords]
-
-    for future in tqdm(as_completed(futures), total=len(futures)):
-        sf1 = future.result()
-        is_letter(sf1[2], u_sdss_crossmatch)
-        is_letter(sf1[5], i_sdss_crossmatch)
-        is_letter(sf1[0], ra_sdss_crossmatch)
+    # CS Futures represents the future output from run_sdss_query
+    
+    for future in as_completed(futures): # CS as_completed only gives us query outputs when they are done, so the code isnt "waiting around"
+        sf1 = future.result() # CS Return result of queries
+        is_letter(sf1[2], u_sdss_crossmatch) # CS Use is_letter to append only numbers to our tables
+        is_letter(sf1[5], i_sdss_crossmatch) # CS This ensures we don't have any not found ones
+        is_letter(sf1[0], ra_sdss_crossmatch) # CS Same with ra and dec
         is_letter(sf1[1], dec_sdss_crossmatch)
 
 
 # CS Get ubrite1 and append
-ii = np.argmin(u_sdss_crossmatch) # CS u-band brightest (smallest mag)
-ubrite1_u = u_sdss_crossmatch[ii]
+ii = np.argmin(np.unique(u_sdss_crossmatch)) # CS u-band brightest (smallest mag), checking for duplicate sources
+ubrite1_u = u_sdss_crossmatch[ii] # CS Get rest of ubrite1 params
 ubrite1_i = i_sdss_crossmatch[ii]
 ubrite1_ra = ra_sdss_crossmatch[ii]
 ubrite1_dec = dec_sdss_crossmatch[ii]
@@ -240,7 +273,7 @@ def lam_v_flux(lam,flux):
     plt.xlim(3000,25000)
     plt.xlabel("Band Wavelength (Angstroms)")
     plt.ylabel("Nanomaggies (3631 * $10^9$) Jy")
-    plt.show()
+    #plt.show()
 
 
 def print_results():
@@ -269,13 +302,21 @@ if __name__ == "__main__":
 """
 Results
 ----------------
+ubrite1_u:
+19.84357
+ubrite1_i:
+19.50188
+ubrite1_ra:
+159.417360038982
+ubrite1_dec:
+50.465377060102
 #3: Number of cross matched r<22 W1-W2 > 0.5 sources:
-585
+42
 #5 Total number of sources with a match in SDSS:
-567
-So ~96.92% recovered
-1brite1 u band: 14.8
-ubrite1 i band: 13.63
+38
+% of #3:
+90.47619047619048 %
+
 
 """
     
