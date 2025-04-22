@@ -8,15 +8,7 @@ Likelihood Functions and MCMC
 
 # CS Import packages
 import numpy as np
-import matplotlib.pyplot as plt
-from astropy.table import Table, join
-from tqdm import tqdm
-from astropy import units as u
-from astropy.coordinates import SkyCoord
-from astropy.io import fits
-from tqdm import tqdm
 import random
-import os
 
 
 # CS Impot line.data
