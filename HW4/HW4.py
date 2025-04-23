@@ -72,12 +72,6 @@ for i in tqdm(range(len(sweeplist_in))):
     sweep = Table.read(sweeplist_in[i], memmap=True)
     mag_mask = (sweep["FLUX_R"] > rl19)
     sweep = sweep[mag_mask]
-    # CS Now make sweep skycoord
-    ra_sweep = np.array(sweep["RA"])*u.degree
-    dec_sweep = np.array(sweep["DEC"])*u.degree
-    c2 = SkyCoord(ra_sweep,dec_sweep, frame='icrs')
-    # CS Use separation
-    mask_sep = (c_center.separation(c2) < 3*u.degree)
     sweep_tables.append(sweep)
 
 # CS Combine sweep files
