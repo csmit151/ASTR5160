@@ -398,11 +398,11 @@ if __name__ == "__main__":
     splendid_function(args.Table)
     
     """
-    CS Code testing block
+    #CS Code testing block
     ii = splendid_function(args.Table)
+    qs316 = Table.read("/d/scratch/ASTR5160/week10/qsos-ra180-dec30-rad3.fits", memmap=True)
     Ttest = Table.read('/d/scratch/ASTR5160/data/legacysurvey/dr9/south/sweep/9.0/sweep-170p025-180p030.fits', memmap=True)
     qout = Ttest[ii]
-    qs316 = Table.read('qs.fits', memmap=True)
     
     qsra = np.array(qs316["RA"])*u.degree # CS 316 Quasars
     qsdec = np.array(qs316["DEC"])*u.degree
@@ -413,8 +413,13 @@ if __name__ == "__main__":
     c2 = SkyCoord(test_ra,test_dec,frame='icrs')
     id1, id2, d2, d3 = c2.search_around_sky(c1, (1/3600)*u.deg) # CS 1" matching radius
 
-    qs316_match = qs316[id1] # CS quasar files matched objects
-    print("Matched sources:",len(qs316_match))
+    qs316_match = Ttest[id2] # CS quasar files matched objects
+    
+    rl19 = float(10**(-(19-22.5)/2.5)) # CS Corresponds to flux =  r band mag of 19
+    ii = (qs316_match["FLUX_R"] > rl19)
+    qs_r19 = qs316_match[ii]
+    print("Number of splendid sources that are in qs316:",len(qs316_match))
+    print("Number of splendid sources that are in qs316 r<19:",len(qs_r19))
     print("I got 68...")
     """
 
@@ -430,7 +435,7 @@ I get 190 r<19 quasars from these 4 sweep files
 Let's see how many are "right"
 
 1st sweep:
-Now have: 68 Objects
-Matched sources: 61
-so ~90%!
+Number of splendid sources that are in qs316 r<19: 57
+I got 68!
+
 """
