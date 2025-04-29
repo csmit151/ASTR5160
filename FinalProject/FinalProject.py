@@ -13,6 +13,8 @@ from astropy.table import Table
 import corner
 import emcee
 import matplotlib.patches as mpatches
+from scipy.optimize import minimize
+
 
 def emcee_line_fit(data_location):
     """ Uses a Bayseian framework to fit a linear
@@ -61,9 +63,7 @@ def emcee_line_fit(data_location):
     # CS Choose some inital values that make sense for our line
     m_true = -2
     b_true = 2
-    
-    from scipy.optimize import minimize
-    
+        
     np.random.seed(42)
     nll = lambda *args: -log_likelihood(*args)
     initial = np.array([m_true, b_true]) + 0.1 * np.random.randn(2)
@@ -150,9 +150,7 @@ def emcee_line_fit(data_location):
     # CS that they give us. 
     
     fig = corner.corner(flat_samples, labels=labels)
-    
-    from IPython.display import display, Math
-    
+        
     # CS Get fit params for easy plotting
     m_line = 0
     b_line = 0
@@ -188,7 +186,7 @@ def emcee_line_fit(data_location):
 
 def emcee_quad_fit(data_location):
     """ Uses a Bayseian framework to fit a quadratic
-    model of the form y=mx+b to the data 
+    model of the form y=a2*x**2+a1*x+a0 to the data 
     
     Parameters
     ----------
@@ -234,9 +232,7 @@ def emcee_quad_fit(data_location):
     a1_true = -0.5
     a0_true = 1
 
-    
-    from scipy.optimize import minimize
-    
+        
     np.random.seed(42)
     nll = lambda *args: -log_likelihood(*args)
     initial = np.array([a2_true,a1_true,a0_true]) + 0.1 * np.random.randn(3)
@@ -322,9 +318,7 @@ def emcee_quad_fit(data_location):
     # CS that they give us. 
     
     fig = corner.corner(flat_samples, labels=labels)
-    
-    from IPython.display import display, Math
-    
+        
     # CS Get fit params for easy plotting
     a2 = 0
     a1 = 0
